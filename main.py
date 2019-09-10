@@ -1,6 +1,5 @@
 import sys
-from fbchat import *
-from fbchat import FBchatException, FBchatFacebookError, FBchatUserError
+import fbchat
 from secrets import *
 from reactor import REACTS
 import argparse
@@ -10,7 +9,8 @@ import time
 SESSION_COOKIES = None
 
 AVAILABLE_ACTIONS = {
-    1: 'Automatic Reactor'
+    1: 'Automatic Reactor',
+    2: 'Twilio Redirector',
 }
 
 
@@ -19,19 +19,20 @@ def start():
     if ARGS.action == 1:
         import reactor
         reactor.start(ARGS)
-    # elif ARGS.action == 2:                # Expand as new actions are incorporated
-    #     ...
+    elif ARGS.action == 2:                # Expand as new actions are incorporated
+        import redirector
+        redirector.start()
     sys.exit(0)
 
 
 def create_client():
     try:
-        client = Client(email=email, password=password, max_tries=1)
+        client = fbchat.Client(email=email, password=password, max_tries=1)
         global SESSION_COOKIES
         SESSION_COOKIES = client.getSession()
         client.setSession(SESSION_COOKIES)
         return client
-    except FBchatException as e:
+    except fbchat.FBchatException as e:
         print('Could not login...\n{}'.format(e))
     sys.exit(0)
 
@@ -41,8 +42,8 @@ def check_login(client):            # aux method to be used throughout codebase
         global SESSION_COOKIES
         # reinit client var using session cookies, or log in again
         try:
-            new_client = Client(email=email, password=password, max_tries=1, session_cookies=SESSION_COOKIES)
-        except FBchatException:
+            new_client = fbchat.Client(email=email, password=password, max_tries=1, session_cookies=SESSION_COOKIES)
+        except fbchat.FBchatException:
             print('Could not login...')
             sys.exit(0)
         return new_client
@@ -72,6 +73,9 @@ def get_args():
     # Reactor Action Options
     action_options.add_argument('--reactor', default=None, help='Specify the react you would like to do:\n{}'
                                 .format(list(REACTS.keys())))
+
+    action_options.add_argument('--phone', default=None,
+                                help='Specify the phone number you would like messages to redirect to')
 
     return parser.parse_args()
 

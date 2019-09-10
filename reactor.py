@@ -1,17 +1,16 @@
 import sys
-from fbchat import *
-from fbchat import MessageReaction, FBchatException
+import fbchat
 from secrets import *
 import time
 
 REACTS = {
-    'heart': MessageReaction.LOVE,
-    'wow': MessageReaction.WOW,
-    'mad': MessageReaction.ANGRY,
-    'sad': MessageReaction.SAD,
-    'haha': MessageReaction.SMILE,
-    'up': MessageReaction.YES,
-    'down': MessageReaction.NO,
+    'heart': fbchat.MessageReaction.LOVE,
+    'wow': fbchat.MessageReaction.WOW,
+    'mad': fbchat.MessageReaction.ANGRY,
+    'sad': fbchat.MessageReaction.SAD,
+    'haha': fbchat.MessageReaction.SMILE,
+    'up': fbchat.MessageReaction.YES,
+    'down': fbchat.MessageReaction.NO,
 }
 
 CHOSEN_REACT = None
@@ -33,7 +32,7 @@ def start(ARGS):
         global SESSION_COOKIES
         SESSION_COOKIES = client.getSession()
         client.setSession(SESSION_COOKIES)
-    except FBchatException as e:
+    except fbchat.FBchatException as e:
         print('Could not login...\n{}'.format(e))
         sys.exit(0)
 
@@ -45,6 +44,7 @@ def start(ARGS):
                 time.sleep(1)
             except KeyboardInterrupt:
                 print('Caught CTRL-C, exiting process')
+                break
 
     # graceful exit
     if client is not None and client.isLoggedIn():
@@ -66,10 +66,10 @@ def reactor_sanity(ARGS):
         sys.exit(0)
 
 
-class AutoReactor(Client):
+class AutoReactor(fbchat.Client):
     def onMessage(self, author_id, message_object, thread_id, thread_type, **kwargs):
         self.markAsDelivered(thread_id, message_object.uid)
-        # self.markAsRead(thread_id)        # test to not send read receipts
+        self.markAsRead(thread_id)        # test to not send read receipts
 
         # If user did not send message, react accordingly
         if author_id != self.uid:
