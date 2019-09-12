@@ -21,7 +21,7 @@ def start():
         reactor.start(ARGS)
     elif ARGS.action == 2:                # Expand as new actions are incorporated
         import redirector
-        redirector.start()
+        redirector.start(ARGS)
     sys.exit(0)
 
 
@@ -55,10 +55,10 @@ def get_args():
 
     # Group / User switch
     recipient = parser.add_argument_group(title='Recipient')
-    recipient.add_argument('--user', help='Pass in Facebook username of individual. Mutually exclusive with --group.',
+    recipient.add_argument('--user', help='Pass in Facebook name of individual. Mutually exclusive with --group.',
                            default=None)
     recipient.add_argument('--group', help='Pass in Facebook group chat name. Mutually exclusive with --user.',
-                           default=None)
+                           default=None, nargs='*')
 
     # Action switch
     actions = parser.add_argument_group(title='Action')
@@ -77,14 +77,28 @@ def get_args():
     action_options.add_argument('--phone', default=None,
                                 help='Specify the phone number you would like messages to redirect to')
 
+    action_options.add_argument('--users', default=None, nargs='*',
+                                help='Specify the user(s) (name in " " marks) you would like to redirect messages from')
+
     return parser.parse_args()
 
 
 def general_sanity():
-    # check that not both --user and --group is passed in
-    if ARGS.user is not None and ARGS.group is not None:
-        print('Please only specify either --user or --group, not both.')
-        sys.exit(0)
+    # mutex code for --group, --user, and --users
+    if ARGS.user is not None:
+        ARGS.group = None
+        ARGS.users = None
+        return
+    elif ARGS.users is not None:
+        ARGS.group = None
+        ARGS.user = None
+        return
+    elif ARGS.group is not None:
+        ARGS.user = None
+        ARGS.users = None
+        return
+    else:
+        pass        # None of the 3 were indicated...
 
 
 def check_recipient():      # aux method to be used when sending/interacting with a message
